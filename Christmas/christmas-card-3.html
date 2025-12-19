@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Christmas Card</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a472a 0%, #2d5a3f 50%, #0f2b1a 100%);
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+        }
+
+        /* Snowfall effect */
+        .snowflakes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .snowflake {
+            position: absolute;
+            color: #fff;
+            font-size: 1em;
+            text-shadow: 0 0 5px #fff;
+            animation: fall linear infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(110vh) rotate(360deg);
+            }
+        }
+
+        .scene {
+            perspective: 1500px;
+            perspective-origin: 50% 50%;
+            z-index: 2;
+        }
+
+        .card-container {
+            width: 350px;
+            height: 450px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s ease;
+        }
+
+        .card-container.scaled {
+            transform: scale(var(--card-scale, 1)) translateX(25%);
+        }
+
+        @media (hover: hover) {
+            .card-container:not(.scaled):hover {
+                transform: rotateY(-5deg) rotateX(5deg);
+            }
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        /* Inside of card (left page - visible when open) */
+        .card-inside-left {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f5f5dc 0%, #fffef0 100%);
+            border-radius: 10px 0 0 10px;
+            box-shadow: inset 5px 0 15px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backface-visibility: hidden;
+        }
+
+        .card-inside-left img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 5px;
+        }
+
+        .card-inside-left .placeholder {
+            text-align: center;
+            color: #8b4513;
+            font-style: italic;
+        }
+
+        /* Front cover (right side that opens) */
+        .card-front {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+            border-radius: 0 10px 10px 0;
+            transform-origin: left center;
+            transform-style: preserve-3d;
+            transition: transform 1.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 5px 5px 20px rgba(0,0,0,0.4);
+            cursor: pointer;
+        }
+
+        .card-front.open {
+            transform: rotateY(-160deg);
+        }
+
+        .card-front-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 0 10px 10px 0;
+            overflow: hidden;
+        }
+
+        .card-front-face img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .card-front-face .placeholder {
+            text-align: center;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .card-front-face .placeholder h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        /* Back of front cover (inside right page) */
+        .card-front-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #fffef0 0%, #f5f5dc 100%);
+            backface-visibility: hidden;
+            transform: rotateY(180deg);
+            border-radius: 10px 0 0 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            box-shadow: inset -5px 0 15px rgba(0,0,0,0.1);
+        }
+
+        .card-front-back .message {
+            text-align: center;
+            color: #2d5a3f;
+            line-height: 1.8;
+        }
+
+        .card-front-back .message h3 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #c41e3a;
+        }
+
+        /* Decorative elements */
+        .ribbon {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            top: -5px;
+            right: -5px;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .ribbon span {
+            position: absolute;
+            display: block;
+            width: 90px;
+            padding: 5px 0;
+            background: #ffd700;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            color: #8b0000;
+            font-size: 0.7em;
+            text-align: center;
+            text-transform: uppercase;
+            transform: rotate(45deg);
+            top: 15px;
+            right: -22px;
+        }
+
+        .instruction {
+            margin-top: 30px;
+            color: #ffd700;
+            font-size: 1.1em;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            animation: pulse 2s ease-in-out infinite;
+            z-index: 2;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .instruction.hidden {
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* Spine effect */
+        .card::before {
+            content: '';
+            position: absolute;
+            left: -3px;
+            top: 0;
+            width: 6px;
+            height: 100%;
+            background: linear-gradient(90deg, #5c1a1a, #8b2a2a, #5c1a1a);
+            border-radius: 3px;
+            z-index: 5;
+        }
+
+        /* Config panel */
+        .config-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 100;
+            max-width: 300px;
+            font-family: Arial, sans-serif;
+        }
+
+        .config-panel h3 {
+            margin-bottom: 15px;
+            color: #2d5a3f;
+            font-size: 1em;
+        }
+
+        .config-panel label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 0.85em;
+        }
+
+        .config-panel input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 0.85em;
+        }
+
+        .config-panel button {
+            width: 100%;
+            padding: 10px;
+            background: #c41e3a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .config-panel button:hover {
+            background: #8b0000;
+        }
+
+        .config-panel .note {
+            margin-top: 10px;
+            font-size: 0.75em;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .toggle-config {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ffd700;
+            color: #8b0000;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 99;
+            font-weight: bold;
+        }
+
+        .config-panel.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="snowflakes" id="snowflakes"></div>
+
+    <!--<button class="toggle-config" onclick="toggleConfig()">⚙️ Settings</button>-->
+
+    <div class="config-panel" id="configPanel" style="visibility: hidden">
+        <h3>🎄 Card Configuration</h3>
+        
+        <label for="coverFolder">Cover Images Folder:</label>
+        <input type="text" id="coverFolder" value="covers/" placeholder="e.g., covers/">
+        
+        <label for="insideFolder">Inside Images Folder:</label>
+        <input type="text" id="insideFolder" value="inside/" placeholder="e.g., inside/">
+        
+        <label for="coverFiles">Cover Image Files (comma-separated):</label>
+        <input type="text" id="coverFiles" value="cover1.JPG,cover2.JPG,cover3.JPG,cover4.JPG" placeholder="cover1.png,cover2.jpg">
+        
+        <label for="insideFiles">Inside Image Files (comma-separated):</label>
+        <input type="text" id="insideFiles" value="" placeholder="inside1.png,inside2.jpg">
+        
+        <button onclick="loadImages()">Load New Card</button>
+        
+        <p class="note">
+            <strong>Query String:</strong><br>
+            You can specify the inside image via URL:<br>
+            <code>?inside=mycard.png</code><br><br>
+            <strong>Folder Structure:</strong><br>
+            📁 your-folder/<br>
+            &nbsp;&nbsp;├── index.html<br>
+            &nbsp;&nbsp;├── 📁 covers/<br>
+            &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── cover1.png<br>
+            &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── cover2.jpg<br>
+            &nbsp;&nbsp;└── 📁 inside/<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── inside1.png<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── inside2.jpg
+        </p>
+    </div>
+
+    <div class="scene">
+        <div class="card-container">
+            <div class="card" id="card">
+                <!-- Inside left page -->
+                <div class="card-inside-left">
+                    <img id="insideImage" src="" alt="Inside of card" style="display:none;">
+                    <div class="placeholder" id="insidePlaceholder">
+                        <p>🎄</p>
+                        <p>Inside image will appear here</p>
+                    </div>
+                </div>
+                
+                <!-- Front cover (opens) -->
+                <div class="card-front" id="cardFront">
+                    <div class="ribbon"><span>2024</span></div>
+                    
+                    <!-- Front face of cover -->
+                    <div class="card-front-face">
+                        <img id="coverImage" src="" alt="Card cover" style="display:none;">
+                        <div class="placeholder" id="coverPlaceholder">
+                            <h2>🎄</h2>
+                            <p>Merry Christmas</p>
+                            <p style="font-size:0.8em; margin-top:10px;">Click to open</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Back of cover (inside right page) -->
+                    <div class="card-front-back">
+                        <div class="message">
+                            <h3>Season's Greetings!</h3>
+                            <p>Wishing you joy, peace,<br>and happiness this<br>festive season.</p>
+                            <p style="margin-top: 20px;">🎄 ⭐ 🎁</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <p class="instruction" id="instruction">Click the card to open</p>
+
+    <script>
+        // Card interaction
+        const card = document.getElementById('card');
+        const cardFront = document.getElementById('cardFront');
+        const cardContainer = document.querySelector('.card-container');
+        const instruction = document.getElementById('instruction');
+        let isOpen = false;
+
+        function calculateScale() {
+            const cardWidth = 350;
+            const openWidth = cardWidth * 2; // When open, card spans roughly twice the width
+            const viewportWidth = window.innerWidth;
+            const padding = 40; // Some padding on the sides
+            
+            if (viewportWidth < openWidth + padding) {
+                const scale = (viewportWidth - padding) / openWidth;
+                return Math.max(0.4, Math.min(1, scale)); // Clamp between 0.4 and 1
+            }
+            return 1;
+        }
+
+        card.addEventListener('click', () => {
+            isOpen = !isOpen;
+            if (isOpen) {
+                cardFront.classList.add('open');
+                instruction.textContent = 'Click to close';
+                
+                // Calculate and apply scale for mobile
+                const scale = calculateScale();
+                if (scale < 1) {
+                    cardContainer.style.setProperty('--card-scale', scale);
+                    cardContainer.classList.add('scaled');
+                }
+            } else {
+                cardFront.classList.remove('open');
+                instruction.textContent = 'Click the card to open';
+                cardContainer.classList.remove('scaled');
+            }
+        });
+
+        // Recalculate on resize
+        window.addEventListener('resize', () => {
+            if (isOpen) {
+                const scale = calculateScale();
+                if (scale < 1) {
+                    cardContainer.style.setProperty('--card-scale', scale);
+                    cardContainer.classList.add('scaled');
+                } else {
+                    cardContainer.classList.remove('scaled');
+                }
+            }
+        });
+
+        // Create snowflakes
+        function createSnowflakes() {
+            const container = document.getElementById('snowflakes');
+            const snowflakeChars = ['❄', '❅', '❆', '✻', '✼', '❉'];
+            
+            for (let i = 0; i < 50; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                snowflake.textContent = snowflakeChars[Math.floor(Math.random() * snowflakeChars.length)];
+                snowflake.style.left = Math.random() * 100 + 'vw';
+                snowflake.style.fontSize = (Math.random() * 1 + 0.5) + 'em';
+                snowflake.style.opacity = Math.random() * 0.6 + 0.4;
+                snowflake.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                snowflake.style.animationDelay = (Math.random() * 10) + 's';
+                container.appendChild(snowflake);
+            }
+        }
+
+        // Config panel toggle
+        function toggleConfig() {
+            const panel = document.getElementById('configPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        // Load images from configured folders
+        function loadImages() {
+            const coverFolder = document.getElementById('coverFolder').value;
+            const insideFolder = document.getElementById('insideFolder').value;
+            const coverFiles = document.getElementById('coverFiles').value.split(',').map(f => f.trim()).filter(f => f);
+            const insideFiles = document.getElementById('insideFiles').value.split(',').map(f => f.trim()).filter(f => f);
+
+            // Select random images
+            if (coverFiles.length > 0) {
+                const randomCover = coverFiles[Math.floor(Math.random() * coverFiles.length)];
+                const coverImg = document.getElementById('coverImage');
+                const coverPlaceholder = document.getElementById('coverPlaceholder');
+                
+                coverImg.src = coverFolder + randomCover;
+                coverImg.onload = () => {
+                    coverImg.style.display = 'block';
+                    coverPlaceholder.style.display = 'none';
+                };
+                coverImg.onerror = () => {
+                    coverImg.style.display = 'none';
+                    coverPlaceholder.style.display = 'block';
+                    console.log('Could not load cover image:', coverFolder + randomCover);
+                };
+            }
+
+            // Only load random inside image if not specified in query string
+            const insideParam = getQueryParam('inside');
+            if (!insideParam && insideFiles.length > 0) {
+                const randomInside = insideFiles[Math.floor(Math.random() * insideFiles.length)];
+                const insideImg = document.getElementById('insideImage');
+                const insidePlaceholder = document.getElementById('insidePlaceholder');
+                
+                insideImg.src = insideFolder + randomInside;
+                insideImg.onload = () => {
+                    insideImg.style.display = 'block';
+                    insidePlaceholder.style.display = 'none';
+                };
+                insideImg.onerror = () => {
+                    insideImg.style.display = 'none';
+                    insidePlaceholder.style.display = 'block';
+                    console.log('Could not load inside image:', insideFolder + randomInside);
+                };
+            }
+
+            // Close the card if open
+            if (isOpen) {
+                isOpen = false;
+                cardFront.classList.remove('open');
+                instruction.textContent = 'Click the card to open';
+            }
+        }
+
+        // Parse query string parameters
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Initialise
+        createSnowflakes();
+        
+        // Try to load images on page load
+        window.addEventListener('load', () => {
+            // Check for inside image in query string
+            const insideParam = getQueryParam('inside');
+            if (insideParam) {
+                // Update the input field to show the override
+                document.getElementById('insideFiles').value = insideParam;
+                
+                // Load the specific inside image
+                const insideFolder = document.getElementById('insideFolder').value;
+                const insideImg = document.getElementById('insideImage');
+                const insidePlaceholder = document.getElementById('insidePlaceholder');
+                
+                insideImg.src = insideFolder + insideParam;
+                insideImg.onload = () => {
+                    insideImg.style.display = 'block';
+                    insidePlaceholder.style.display = 'none';
+                };
+                insideImg.onerror = () => {
+                    insideImg.style.display = 'none';
+                    insidePlaceholder.style.display = 'block';
+                    console.log('Could not load inside image from query string:', insideFolder + insideParam);
+                };
+            }
+            
+            loadImages();
+        });
+    </script>
+</body>
+</html>
